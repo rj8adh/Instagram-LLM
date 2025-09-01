@@ -7,7 +7,7 @@ import os
 
 load_dotenv()
 
-apifyKey = os.getenv("APIFY_KEY")
+apifyKey = os.getenv("BACKUP_KEY")
 # print(apifyKey)
 
 async def main() -> None:
@@ -17,13 +17,28 @@ async def main() -> None:
     # Start an Actor and wait for it to finish.
     actor_client = apify_client.actor('apify/instagram-comment-scraper')
 
+    with open('allReels.json', 'r') as f:
+        allReelData = json.load(f)
+
+    allReelData = [data for data in allReelData if data['Sender'] != 'Samved'] # Remove Samved's comments lmao
+    # print(allReelData)
+    allUrls = []
+    counter = 0
+    for reelData in allReelData:
+        reel = reelData['Reel']
+        if reel not in allUrls:
+            allUrls.append(reel)
+        else:
+            counter+=1
+    print(counter)
+
+    # print(len(allUrls))
+
     input_data = {
-    "directUrls": [
-        "https://www.instagram.com/p/DE-UmMaP6_0/"
-    ],
+    "directUrls": allUrls[500:],
     "includeNestedComments": False,
     "isNewestComments": False,
-    "resultsLimit": 5
+    "resultsLimit": 15
     }
 
     run_result = await actor_client.call(run_input=input_data, timeout_secs=60)
@@ -43,7 +58,7 @@ async def main() -> None:
     print(len(run_result))
 
     with open(f'{str(datetime.now().strftime("Comments_%Y-%m-%d_%H-%M-%S"))}.json', 'w') as f:
-        json.dumps(allComments, f, indent=4)
+        json.dump(allComments, f, indent=4)
 
 if __name__ == '__main__':
     asyncio.run(main())
